@@ -1,0 +1,59 @@
+﻿using ECommerceBE.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ECommerceBE.Models;
+
+namespace ECommerceBE.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CategoryController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
+
+        public CategoryController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<Category>>> GetCategories()
+        {
+            return Ok(await _context.Categories.ToListAsync());
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> PostCategories(Category category)
+        {
+            _context.Add(category);
+            await _context.SaveChangesAsync();
+            return Ok(category);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Category>> GetCategory(int id)
+        {
+            var category = await _context.Categories.FirstOrDefaultAsync(x => x.Id == id);
+            if (category == null)
+                return NotFound("Category not found.");
+            return Ok(category);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult> DeleteCategory(int id)
+        {
+            var categoryExists = await _context.Categories.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (categoryExists == null)
+            {
+                return NotFound();
+            }
+
+            _context.Remove(categoryExists);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+    }
+}

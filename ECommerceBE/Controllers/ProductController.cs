@@ -41,6 +41,20 @@ namespace ECommerceBE.Controllers
             return Ok(product);
         }
 
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateProduct(int productId, [FromBody] Product product)
+        {
+            if (product == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _context.Products.Update(product);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteProduct(int id)
         {

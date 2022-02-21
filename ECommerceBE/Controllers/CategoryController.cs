@@ -27,7 +27,7 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostCategories(Category category)
         {
-            _context.Add(category);
+            _context.Categories.Add(category);
             await _context.SaveChangesAsync();
             return Ok(category);
         }
@@ -39,6 +39,20 @@ namespace ECommerceBE.Controllers
             if (category == null)
                 return NotFound("Category not found.");
             return Ok(category);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateCategory(int categoryId, [FromBody] Category category)
+        {
+            if (category == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _context.Categories.Update(category);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]

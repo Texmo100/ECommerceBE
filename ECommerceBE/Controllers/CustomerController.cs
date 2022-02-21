@@ -28,7 +28,7 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostCustomers(Customer customer)
         {
-            _context.Add(customer);
+            _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
             return Ok(customer);
         }
@@ -40,6 +40,20 @@ namespace ECommerceBE.Controllers
             if (customer == null)
                 return NotFound("Customers not found.");
             return Ok(customer);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateCustomer(int customerId, [FromBody] Customer customer)
+        {
+            if (customer == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]

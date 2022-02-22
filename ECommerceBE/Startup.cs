@@ -81,7 +81,7 @@ namespace ECommerceBE
 
             app.UseRouting();
             app.UseCors("CorsPolicy");
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

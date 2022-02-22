@@ -1,4 +1,5 @@
-﻿using ECommerceBE.Data;
+﻿using ECommerceBE.Controllers.Utilities;
+using ECommerceBE.Data;
 using ECommerceBE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostCustomers(Customer customer)
         {
+            customer.Password = UserUtilities.hashPassword(customer.Password);
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
             return Ok(customer);
@@ -50,6 +52,7 @@ namespace ECommerceBE.Controllers
                 return BadRequest(ModelState);
             }
 
+            customer.Password = UserUtilities.hashPassword(customer.Password);
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync();
 

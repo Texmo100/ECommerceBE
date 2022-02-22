@@ -1,4 +1,5 @@
-﻿using ECommerceBE.Data;
+﻿using ECommerceBE.Controllers.Utilities;
+using ECommerceBE.Data;
 using ECommerceBE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostSuppliers(Supplier supplier)
         {
+            supplier.Password = UserUtilities.hashPassword(supplier.Password);
             _context.Add(supplier);
             await _context.SaveChangesAsync();
             return Ok(supplier);
@@ -50,6 +52,7 @@ namespace ECommerceBE.Controllers
                 return BadRequest(ModelState);
             }
 
+            supplier.Password = UserUtilities.hashPassword(supplier.Password);
             _context.Suppliers.Update(supplier);
             await _context.SaveChangesAsync();
 

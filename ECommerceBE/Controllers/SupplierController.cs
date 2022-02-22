@@ -1,6 +1,7 @@
 ﻿using ECommerceBE.Controllers.Utilities;
 using ECommerceBE.Data;
 using ECommerceBE.Models;
+using ECommerceBE.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -14,16 +15,18 @@ namespace ECommerceBE.Controllers
     public class SupplierController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IRepository<Supplier> _repo;
 
-        public SupplierController(ApplicationDbContext context)
+        public SupplierController(ApplicationDbContext context, IRepository<Supplier> repo)
         {
             _context = context;
+            _repo = repo;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Supplier>>> GetSuppliers()
+        public ActionResult<List<Supplier>> GetSuppliers()
         {
-            return Ok(await _context.Suppliers.ToListAsync());
+            return Ok(_repo.GetAllItems());
         }
 
         [HttpPost]

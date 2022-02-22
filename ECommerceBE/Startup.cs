@@ -13,6 +13,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
+using ECommerceBE.Repository.IRepository;
+using ECommerceBE.Models;
+using ECommerceBE.Repository;
 
 namespace ECommerceBE
 {
@@ -31,6 +34,13 @@ namespace ECommerceBE
             services.AddControllers();
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            // Dependency Injection for Repository Pattern
+            services.AddScoped<IRepository<Supplier>, SupplierRepository>();
+            services.AddScoped<IRepository<Product>, ProductRepository>();
+            services.AddScoped<IRepository<Customer>, CustomerRepository>();
+            services.AddScoped<IRepository<Category>, CategoryRepository>();
+
             AddSwagger(services);
         }
 

@@ -1,9 +1,8 @@
-﻿using ECommerceBE.Interfaces;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace ECommerceBE.Models
+namespace ECommerceBE.Interfaces
 {
-    public class Supplier : IUser
+    public interface IUser
     {
         [Key]
         public int Id { get; set; }

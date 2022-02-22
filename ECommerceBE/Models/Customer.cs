@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ECommerceBE.Models
 {
-    public class Supplier : IUser
+    public class Customer : IUser
     {
         [Key]
         public int Id { get; set; }

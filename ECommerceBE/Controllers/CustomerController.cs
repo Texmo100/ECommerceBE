@@ -44,6 +44,17 @@ namespace ECommerceBE.Controllers
             return Ok(customer);
         }
 
+        [HttpGet("{name}")]
+        public async Task<ActionResult<List<Customer>>> SearchByName(string name)
+        {
+            var customers = await _context.Customers.Where(data => data.Name.Contains(name)).ToListAsync();
+            if (customers.Count == 0)
+            {
+                return NotFound("No results");
+            }
+            return customers;
+        }
+
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateCustomer(int customerId, [FromBody] Customer customer)
         {

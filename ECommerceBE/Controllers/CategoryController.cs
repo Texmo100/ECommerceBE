@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ECommerceBE.Models;
+using System.Linq;
 
 namespace ECommerceBE.Controllers
 {
@@ -39,6 +40,17 @@ namespace ECommerceBE.Controllers
             if (category == null)
                 return NotFound("Category not found.");
             return Ok(category);
+        }
+
+        [HttpGet("{name}")]
+        public async Task<ActionResult<List<Category>>> SearchByName(string name)
+        {
+            var categories = await _context.Categories.Where(data => data.Name.Contains(name)).ToListAsync();
+            if (categories.Count == 0)
+            {
+                return NotFound("No results");
+            }
+            return categories;
         }
 
         [HttpPut("{id:int}")]

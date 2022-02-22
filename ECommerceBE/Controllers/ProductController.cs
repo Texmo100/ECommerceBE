@@ -3,6 +3,7 @@ using ECommerceBE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceBE.Controllers
@@ -39,6 +40,31 @@ namespace ECommerceBE.Controllers
             if (product == null)
                 return NotFound("Product not found.");
             return Ok(product);
+        }
+
+        [HttpGet("{name}")]
+        public async Task<ActionResult<List<Product>>> SearchByName(string name)
+        {
+            var products = await _context.Products.Where(data => data.Name.Contains(name)).ToListAsync();
+            if (products.Count == 0)
+            {
+                return NotFound("No results");
+            }
+            return products;
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateProduct(int productId, [FromBody] Product product)
+        {
+            if (product == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _context.Products.Update(product);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]

@@ -1,4 +1,5 @@
-﻿using ECommerceBE.Data;
+﻿using ECommerceBE.Controllers.Utilities;
+using ECommerceBE.Data;
 using ECommerceBE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,8 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostCustomers(Customer customer)
         {
-            _context.Add(customer);
+            customer.Password = UserUtilities.hashPassword(customer.Password);
+            _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
             return Ok(customer);
         }
@@ -40,6 +42,32 @@ namespace ECommerceBE.Controllers
             if (customer == null)
                 return NotFound("Customers not found.");
             return Ok(customer);
+        }
+
+        [HttpGet("{name}")]
+        public async Task<ActionResult<List<Customer>>> SearchByName(string name)
+        {
+            var customers = await _context.Customers.Where(data => data.Name.Contains(name)).ToListAsync();
+            if (customers.Count == 0)
+            {
+                return NotFound("No results");
+            }
+            return customers;
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateCustomer(int customerId, [FromBody] Customer customer)
+        {
+            if (customer == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            customer.Password = UserUtilities.hashPassword(customer.Password);
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]

@@ -1,4 +1,5 @@
-﻿using ECommerceBE.Data;
+﻿using ECommerceBE.Controllers.Utilities;
+using ECommerceBE.Data;
 using ECommerceBE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ namespace ECommerceBE.Controllers
         [HttpPost]
         public async Task<ActionResult> PostSuppliers(Supplier supplier)
         {
+            supplier.Password = UserUtilities.hashPassword(supplier.Password);
             _context.Add(supplier);
             await _context.SaveChangesAsync();
             return Ok(supplier);
@@ -40,6 +42,32 @@ namespace ECommerceBE.Controllers
             if (supplier == null)
                 return NotFound("Supplier not found.");
             return Ok(supplier);
+        }
+
+        [HttpGet("{name}")]
+        public async Task<ActionResult<List<Supplier>>> SearchByName(string name)
+        {
+            var suppliers = await _context.Suppliers.Where(data => data.Name.Contains(name)).ToListAsync();
+            if (suppliers.Count == 0)
+            {
+                return NotFound("No results");
+            }
+            return suppliers;
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateSupplier(int supplierId, [FromBody] Supplier supplier)
+        {
+            if (supplier == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            supplier.Password = UserUtilities.hashPassword(supplier.Password);
+            _context.Suppliers.Update(supplier);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]

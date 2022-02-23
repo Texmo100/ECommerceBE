@@ -5,40 +5,72 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ECommerceBE.Models;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
+using ECommerceBE.Repository.IRepository;
 
 namespace ECommerceBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public class CategoryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IRepository<Category> _repo;
 
-        public CategoryController(ApplicationDbContext context)
+        public CategoryController(ApplicationDbContext context, IRepository<Category> repo)
         {
             _context = context;
+            _repo = repo;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Category>>> GetCategories()
+        [ProducesResponseType(200, Type = typeof(List<Category>))]
+        public IActionResult GetCategories()
         {
-            return Ok(await _context.Categories.ToListAsync());
+            return Ok(_repo.GetAllItems());
         }
 
         [HttpPost]
-        public async Task<ActionResult> PostCategories(Category category)
+        [ProducesResponseType(201, Type = typeof(Category))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult PostCategories(Category category)
         {
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
-            return Ok(category);
+            if (category == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (_repo.ItemExists(category.Name))
+            {
+                ModelState.AddModelError("", "This category already exists");
+                return StatusCode(404, ModelState);
+            }
+
+            if (!_repo.CreateItem(category))
+            {
+                ModelState.AddModelError("", "Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return StatusCode(201, category);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
+        [HttpGet("{categoryId:int}", Name = "GetCategory")]
+        [ProducesResponseType(200, Type = typeof(Category))]
+        [ProducesResponseType(404)]
+        [ProducesDefaultResponseType]
+        public IActionResult GetCategory(int categoryId)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(x => x.Id == id);
+            var category = _repo.GetItem(categoryId);
+
             if (category == null)
-                return NotFound("Category not found.");
+            {
+                return NotFound();
+            }
+
             return Ok(category);
         }
 
@@ -53,33 +85,48 @@ namespace ECommerceBE.Controllers
             return categories;
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateCategory(int categoryId, [FromBody] Category category)
+        [HttpPut("{categoryId:int}", Name = "UpdateCategory")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateCategory(int categoryId, [FromBody] Category category)
         {
-            if (category == null)
+            if (category == null || categoryId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            _context.Categories.Update(category);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteCategory(int id)
-        {
-            var categoryExists = await _context.Categories.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (categoryExists == null)
+            if (!_repo.ItemExists(categoryId))
             {
                 return NotFound();
             }
 
-            _context.Remove(categoryExists);
-            await _context.SaveChangesAsync();
-            return Ok();
+            _repo.UpdateItem(category);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{categoryId:int}", Name = "DeleteCategory")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteCategory(int categoryId)
+        {
+            if (!_repo.ItemExists(categoryId))
+            {
+                return NotFound();
+            }
+
+            var category = _repo.GetItem(categoryId);
+
+            if (!_repo.DeleteItem(category))
+            {
+                ModelState.AddModelError("", $"Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return NoContent();
         }
     }
 }

@@ -99,6 +99,11 @@ namespace ECommerceBE.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (!_repo.ItemExists(supplierId))
+            {
+                return NotFound();
+            }
+
             supplier.Password = UserUtilities.hashPassword(supplier.Password);
             _repo.UpdateItem(supplier);
 

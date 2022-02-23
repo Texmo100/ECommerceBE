@@ -96,6 +96,11 @@ namespace ECommerceBE.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (!_repo.ItemExists(productId))
+            {
+                return NotFound();
+            }
+
             _repo.UpdateItem(product);
 
             return NoContent();

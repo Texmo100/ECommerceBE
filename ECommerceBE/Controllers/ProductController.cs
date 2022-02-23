@@ -1,5 +1,7 @@
 ﻿using ECommerceBE.Data;
 using ECommerceBE.Models;
+using ECommerceBE.Repository.IRepository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -10,35 +12,65 @@ namespace ECommerceBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public class ProductController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IRepository<Product> _repo;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(ApplicationDbContext context, IRepository<Product> repo)
         {
             _context = context;
+            _repo = repo;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Product>>> GetProducts()
+        [ProducesResponseType(200, Type = typeof(List<Product>))]
+        public IActionResult GetProducts()
         {
-            return Ok(await _context.Products.ToListAsync());
+            return Ok(_repo.GetAllItems());
         }
 
         [HttpPost]
-        public async Task<ActionResult> PostProducts(Product Product)
+        [ProducesResponseType(201, Type = typeof(Product))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult PostProducts(Product product)
         {
-            _context.Add(Product);
-            await _context.SaveChangesAsync();
-            return Ok(Product);
+            if (product == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (_repo.ItemExists(product.Name))
+            {
+                ModelState.AddModelError("", "This product already exists");
+                return StatusCode(404, ModelState);
+            }
+
+            if (!_repo.CreateItem(product))
+            {
+                ModelState.AddModelError("", "Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return StatusCode(201, product);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        [HttpGet("{productId:int}", Name = "GetProduct")]
+        [ProducesResponseType(200, Type = typeof(Product))]
+        [ProducesResponseType(404)]
+        [ProducesDefaultResponseType]
+        public IActionResult GetProduct(int productId)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+            var product = _repo.GetItem(productId);
+
             if (product == null)
-                return NotFound("Product not found.");
+            {
+                return NotFound();
+            }
+
             return Ok(product);
         }
 
@@ -53,33 +85,43 @@ namespace ECommerceBE.Controllers
             return products;
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateProduct(int productId, [FromBody] Product product)
+        [HttpPut("{productId:int}", Name = "UpdateProduct")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateProduct(int productId, [FromBody] Product product)
         {
-            if (product == null)
+            if (product == null || productId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
+            _repo.UpdateItem(product);
 
             return NoContent();
         }
 
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteProduct(int id)
+        [HttpDelete("{productId:int}", Name = "DeleteProduct")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteProduct(int productId)
         {
-            var productExists = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (productExists == null)
+            if (!_repo.ItemExists(productId))
             {
                 return NotFound();
             }
 
-            _context.Remove(productExists);
-            await _context.SaveChangesAsync();
-            return Ok();
+            var product = _repo.GetItem(productId);
+
+            if (!_repo.DeleteItem(product))
+            {
+                ModelState.AddModelError("", $"Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return NoContent();
         }
     }
 }

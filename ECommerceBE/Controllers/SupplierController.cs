@@ -2,6 +2,7 @@
 using ECommerceBE.Data;
 using ECommerceBE.Models;
 using ECommerceBE.Repository.IRepository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace ECommerceBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public class SupplierController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -24,26 +26,54 @@ namespace ECommerceBE.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Supplier>> GetSuppliers()
+        [ProducesResponseType(200,Type = typeof(List<Supplier>))]
+        public IActionResult GetSuppliers()
         {
             return Ok(_repo.GetAllItems());
         }
 
         [HttpPost]
-        public async Task<ActionResult> PostSuppliers(Supplier supplier)
+        [ProducesResponseType(201, Type = typeof(Supplier))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult PostSuppliers([FromBody] Supplier supplier)
         {
+            if (supplier == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (_repo.ItemExists(supplier.Name))
+            {
+                ModelState.AddModelError("", "This supplier already exists");
+                return StatusCode(404, ModelState);
+            }
+
             supplier.Password = UserUtilities.hashPassword(supplier.Password);
-            _context.Add(supplier);
-            await _context.SaveChangesAsync();
-            return Ok(supplier);
+
+            if (!_repo.CreateItem(supplier))
+            {
+                ModelState.AddModelError("", "Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return StatusCode(201, supplier);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<Supplier>> GetSupplier(int id)
+        [HttpGet("{supplierId:int}", Name = "GetSupplier")]
+        [ProducesResponseType(200, Type = typeof(Supplier))]
+        [ProducesResponseType(404)]
+        [ProducesDefaultResponseType]
+        public IActionResult GetSupplier(int supplierId)
         {
-            var supplier = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == id);
+            var supplier = _repo.GetItem(supplierId);
+
             if (supplier == null)
-                return NotFound("Supplier not found.");
+            {
+                return NotFound();
+            }
+
             return Ok(supplier);
         }
 
@@ -58,34 +88,44 @@ namespace ECommerceBE.Controllers
             return suppliers;
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateSupplier(int supplierId, [FromBody] Supplier supplier)
+        [HttpPut("{supplierId:int}", Name = "UpdateSupplier")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateSupplier(int supplierId, [FromBody] Supplier supplier)
         {
-            if (supplier == null)
+            if (supplier == null || supplierId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
             supplier.Password = UserUtilities.hashPassword(supplier.Password);
-            _context.Suppliers.Update(supplier);
-            await _context.SaveChangesAsync();
+            _repo.UpdateItem(supplier);
 
             return NoContent();
         }
 
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteSupplier(int id)
+        [HttpDelete("{supplierId:int}", Name = "DeleteSupplier")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteSupplier(int supplierId)
         {
-            var supplierExists = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (supplierExists == null)
+            if (!_repo.ItemExists(supplierId))
             {
                 return NotFound();
             }
 
-            _context.Remove(supplierExists);
-            await _context.SaveChangesAsync();
-            return Ok();
+            var supplier = _repo.GetItem(supplierId);
+
+            if (!_repo.DeleteItem(supplier))
+            {
+                ModelState.AddModelError("", $"Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return NoContent();
         }
     }
 }

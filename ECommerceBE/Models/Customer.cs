@@ -1,4 +1,5 @@
 ﻿using ECommerceBE.Interfaces;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ECommerceBE.Models
@@ -17,5 +18,8 @@ namespace ECommerceBE.Models
         public string Address { get; set; }
         [Phone]
         public string PhoneNumber { get; set; }
+        public bool IsEmailConfirmed { get; set; } = false;
+        public bool Enabled { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

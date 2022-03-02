@@ -1,6 +1,8 @@
 ﻿using ECommerceBE.Controllers.Utilities;
 using ECommerceBE.Data;
 using ECommerceBE.Models;
+using ECommerceBE.Repository.IRepository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,36 +13,67 @@ namespace ECommerceBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public class CustomerController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IRepository<Customer> _repo;
 
-        public CustomerController(ApplicationDbContext context)
+        public CustomerController(ApplicationDbContext context, IRepository<Customer> repo)
         {
             _context = context;
+            _repo = repo;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Customer>>> GetCustomers()
+        [ProducesResponseType(200, Type = typeof(List<Customer>))]
+        public IActionResult GetCustomers()
         {
-            return Ok(await _context.Customers.ToListAsync());
+            return Ok(_repo.GetAllItems());
         }
 
         [HttpPost]
-        public async Task<ActionResult> PostCustomers(Customer customer)
+        [ProducesResponseType(201, Type = typeof(Customer))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult PostCustomers(Customer customer)
         {
+            if (customer == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (_repo.ItemExists(customer.Name))
+            {
+                ModelState.AddModelError("", "This customer already exists");
+                return StatusCode(404, ModelState);
+            }
+
             customer.Password = UserUtilities.hashPassword(customer.Password);
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
-            return Ok(customer);
+
+            if (!_repo.CreateItem(customer))
+            {
+                ModelState.AddModelError("", "Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return StatusCode(201, customer);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
+        [HttpGet("{customerId:int}", Name = "GetCustomer")]
+        [ProducesResponseType(200, Type = typeof(Customer))]
+        [ProducesResponseType(404)]
+        [ProducesDefaultResponseType]
+        public IActionResult GetCustomer(int customerId)
         {
-            var customer = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id);
+            var customer = _repo.GetItem(customerId);
+
             if (customer == null)
-                return NotFound("Customers not found.");
+            {
+                return NotFound();
+            }
+
             return Ok(customer);
         }
 
@@ -55,34 +88,49 @@ namespace ECommerceBE.Controllers
             return customers;
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateCustomer(int customerId, [FromBody] Customer customer)
+        [HttpPut("{customerId:int}", Name = "UpdateCustomer")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult UpdateCustomer(int customerId, [FromBody] Customer customer)
         {
-            if (customer == null)
+            if (customer == null || customerId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            customer.Password = UserUtilities.hashPassword(customer.Password);
-            _context.Customers.Update(customer);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteCustomers(int id)
-        {
-            var customerExists = await _context.Customers.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (customerExists == null)
+            if (!_repo.ItemExists(customerId))
             {
                 return NotFound();
             }
 
-            _context.Remove(customerExists);
-            await _context.SaveChangesAsync();
-            return Ok();
+            customer.Password = UserUtilities.hashPassword(customer.Password);
+            _repo.UpdateItem(customer);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{customerId:int}", Name = "DeleteCustomer")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteCustomers(int customerId)
+        {
+            if (!_repo.ItemExists(customerId))
+            {
+                return NotFound();
+            }
+
+            var customer = _repo.GetItem(customerId);
+
+            if (!_repo.DeleteItem(customer))
+            {
+                ModelState.AddModelError("", $"Something went wrong during the process");
+                return StatusCode(500, ModelState);
+            }
+
+            return NoContent();
         }
     }
 }

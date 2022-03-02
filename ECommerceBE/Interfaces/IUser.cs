@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ECommerceBE.Interfaces
@@ -15,6 +16,8 @@ namespace ECommerceBE.Interfaces
         public string Address { get; set; }
         [Phone]
         public string PhoneNumber { get; set; }
-
+        public bool IsEmailConfirmed { get; set; } 
+        public bool Enabled { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

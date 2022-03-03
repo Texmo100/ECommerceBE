@@ -27,9 +27,9 @@ namespace ECommerceBE.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(List<Customer>))]
-        public IActionResult GetCustomers()
+        public async Task<IActionResult> GetCustomersAsync()
         {
-            return Ok(_repo.GetAllItems());
+            return Ok(await _repo.GetAllItemsAsync());
         }
 
         [HttpPost]
@@ -37,14 +37,14 @@ namespace ECommerceBE.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult PostCustomers(Customer customer)
+        public async Task<IActionResult> PostCustomerAsync(Customer customer)
         {
             if (customer == null)
             {
                 return BadRequest(ModelState);
             }
 
-            if (_repo.ItemExists(customer.Name))
+            if (await _repo.ItemExistsAsync(customer.Name))
             {
                 ModelState.AddModelError("", "This customer already exists");
                 return StatusCode(404, ModelState);
@@ -52,7 +52,7 @@ namespace ECommerceBE.Controllers
 
             customer.Password = UserUtilities.hashPassword(customer.Password);
 
-            if (!_repo.CreateItem(customer))
+            if (!await _repo.CreateItemAsync(customer))
             {
                 ModelState.AddModelError("", "Something went wrong during the process");
                 return StatusCode(500, ModelState);
@@ -61,13 +61,13 @@ namespace ECommerceBE.Controllers
             return StatusCode(201, customer);
         }
 
-        [HttpGet("{customerId:int}", Name = "GetCustomer")]
+        [HttpGet("{customerId:int}", Name = "GetCustomerAsync")]
         [ProducesResponseType(200, Type = typeof(Customer))]
         [ProducesResponseType(404)]
         [ProducesDefaultResponseType]
-        public IActionResult GetCustomer(int customerId)
+        public async Task<IActionResult> GetCustomerAsync(int customerId)
         {
-            var customer = _repo.GetItem(customerId);
+            var customer = await _repo.GetItemAsync(customerId);
 
             if (customer == null)
             {
@@ -88,43 +88,42 @@ namespace ECommerceBE.Controllers
             return customers;
         }
 
-        [HttpPut("{customerId:int}", Name = "UpdateCustomer")]
+        [HttpPut("{customerId:int}", Name = "UpdateCustomerAsync")]
         [ProducesResponseType(204)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateCustomer(int customerId, [FromBody] Customer customer)
+        public async Task<IActionResult> UpdateCustomerAsync(int customerId, [FromBody] Customer customer)
         {
             if (customer == null || customerId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!_repo.ItemExists(customerId))
+            if (!await _repo.ItemExistsAsync(customerId))
             {
                 return NotFound();
             }
 
             customer.Password = UserUtilities.hashPassword(customer.Password);
-            _repo.UpdateItem(customer);
+            await _repo.UpdateItemAsync(customer);
 
             return NoContent();
         }
 
-        [HttpDelete("{customerId:int}", Name = "DeleteCustomer")]
+        [HttpDelete("{customerId:int}", Name = "DeleteCustomerAsync")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteCustomers(int customerId)
+        public async Task<IActionResult> DeleteCustomerAsync(int customerId)
         {
-            if (!_repo.ItemExists(customerId))
+            if (!await _repo.ItemExistsAsync(customerId))
             {
                 return NotFound();
             }
 
-            var customer = _repo.GetItem(customerId);
+            var customer = await _repo.GetItemAsync(customerId);
 
-            if (!_repo.DeleteItem(customer))
+            if (!await _repo.DeleteItemAsync(customer))
             {
                 ModelState.AddModelError("", $"Something went wrong during the process");
                 return StatusCode(500, ModelState);

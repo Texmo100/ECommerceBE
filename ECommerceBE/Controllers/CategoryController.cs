@@ -26,9 +26,9 @@ namespace ECommerceBE.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(List<Category>))]
-        public IActionResult GetCategories()
+        public async Task<IActionResult> GetCategoriesAsync()
         {
-            return Ok(_repo.GetAllItems());
+            return Ok(await _repo.GetAllItemsAsync());
         }
 
         [HttpPost]
@@ -36,20 +36,20 @@ namespace ECommerceBE.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult PostCategories(Category category)
+        public async Task<IActionResult> PostCategorieAsync(Category category)
         {
             if (category == null)
             {
                 return BadRequest(ModelState);
             }
 
-            if (_repo.ItemExists(category.Name))
+            if (await _repo.ItemExistsAsync(category.Name))
             {
                 ModelState.AddModelError("", "This category already exists");
                 return StatusCode(404, ModelState);
             }
 
-            if (!_repo.CreateItem(category))
+            if (!await _repo.CreateItemAsync(category))
             {
                 ModelState.AddModelError("", "Something went wrong during the process");
                 return StatusCode(500, ModelState);
@@ -58,13 +58,13 @@ namespace ECommerceBE.Controllers
             return StatusCode(201, category);
         }
 
-        [HttpGet("{categoryId:int}", Name = "GetCategory")]
+        [HttpGet("{categoryId:int}", Name = "GetCategoryAsync")]
         [ProducesResponseType(200, Type = typeof(Category))]
         [ProducesResponseType(404)]
         [ProducesDefaultResponseType]
-        public IActionResult GetCategory(int categoryId)
+        public async Task<IActionResult> GetCategoryAsync(int categoryId)
         {
-            var category = _repo.GetItem(categoryId);
+            var category = await _repo.GetItemAsync(categoryId);
 
             if (category == null)
             {
@@ -85,42 +85,42 @@ namespace ECommerceBE.Controllers
             return categories;
         }
 
-        [HttpPut("{categoryId:int}", Name = "UpdateCategory")]
+        [HttpPut("{categoryId:int}", Name = "UpdateCategoryAsync")]
         [ProducesResponseType(204)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateCategory(int categoryId, [FromBody] Category category)
+        public async Task<IActionResult> UpdateCategoryAsync(int categoryId, [FromBody] Category category)
         {
             if (category == null || categoryId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!_repo.ItemExists(categoryId))
+            if (!await _repo.ItemExistsAsync(categoryId))
             {
                 return NotFound();
             }
 
-            _repo.UpdateItem(category);
+            await _repo.UpdateItemAsync(category);
 
             return NoContent();
         }
 
-        [HttpDelete("{categoryId:int}", Name = "DeleteCategory")]
+        [HttpDelete("{categoryId:int}", Name = "DeleteCategoryAsync")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteCategory(int categoryId)
+        public async Task<IActionResult> DeleteCategoryAsync(int categoryId)
         {
-            if (!_repo.ItemExists(categoryId))
+            if (!await _repo.ItemExistsAsync(categoryId))
             {
                 return NotFound();
             }
 
-            var category = _repo.GetItem(categoryId);
+            var category = await _repo.GetItemAsync(categoryId);
 
-            if (!_repo.DeleteItem(category))
+            if (!await _repo.DeleteItemAsync(category))
             {
                 ModelState.AddModelError("", $"Something went wrong during the process");
                 return StatusCode(500, ModelState);

@@ -1,8 +1,10 @@
 ﻿using ECommerceBE.Data;
 using ECommerceBE.Models;
 using ECommerceBE.Repository.IRepository;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ECommerceBE.Repository
 {
@@ -15,49 +17,47 @@ namespace ECommerceBE.Repository
             _context = context;
         }
 
-        public bool CreateItem(Supplier item)
+        public async Task<bool> CreateItemAsync(Supplier item)
         {
             _context.Suppliers.Add(item);
-            return Save();
+            return await SaveAsync();
         }
 
-        public bool DeleteItem(Supplier item)
+        public async Task<bool> DeleteItemAsync(Supplier item)
         {
             _context.Suppliers.Remove(item);
-            return Save();
+            return await SaveAsync();
         }
 
-        public ICollection<Supplier> GetAllItems()
+        public async Task<ICollection<Supplier>> GetAllItemsAsync()
         {
-            return _context.Suppliers.OrderBy(a => a.Name).ToList();
+            return await _context.Suppliers.OrderBy(a => a.Name).ToListAsync();
         }
 
-        public Supplier GetItem(int id)
+        public async Task<Supplier> GetItemAsync(int id)
         {
-            return _context.Suppliers.FirstOrDefault(a => a.Id == id);
+            return await _context.Suppliers.FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public bool ItemExists(string name)
+        public async Task<bool> ItemExistsAsync(string name)
         {
-            var result = _context.Suppliers.Any(a => a.Name.ToLower().Trim() == name.ToLower().Trim());
-            return result;
+            return await _context.Suppliers.AnyAsync(a => a.Name.ToLower().Trim() == name.ToLower().Trim());
         }
 
-        public bool ItemExists(int id)
+        public async Task<bool> ItemExistsAsync(int id)
         {
-            var result = _context.Suppliers.Any(a => a.Id == id);
-            return result;
+            return await _context.Suppliers.AnyAsync(a => a.Id == id);
         }
 
-        public bool Save()
+        public async Task<bool> SaveAsync()
         {
-            return _context.SaveChanges() >= 0 ? true : false;
+            return await _context.SaveChangesAsync() >= 0 ? true : false;
         }
 
-        public bool UpdateItem(Supplier item)
+        public async Task<bool> UpdateItemAsync(Supplier item)
         {
             _context.Suppliers.Update(item);
-            return Save();
+            return await SaveAsync();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ECommerceBE.Data;
+﻿using ECommerceBE.Controllers.Utilities;
+using ECommerceBE.Data;
 using ECommerceBE.Models;
 using ECommerceBE.Repository.IRepository;
 using Microsoft.AspNetCore.Http;
@@ -74,10 +75,15 @@ namespace ECommerceBE.Controllers
             return Ok(product);
         }
 
-        [HttpGet("{name}")]
-        public async Task<ActionResult<List<Product>>> SearchByName(string name)
+        [HttpGet("{name}", Name = "SearchByName")]
+        [ProducesResponseType(200, Type = typeof(Product))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<List<Product>>> SearchByName(string name, [FromQuery] PaginationParams @params)
         {
-            var products = await _context.Products.Where(data => data.Name.Contains(name)).ToListAsync();
+            var products = await _context.Products.Where(data => data.Name.Contains(name))
+                .Skip((@params.Page - 1) * @params.PageSize)
+                .Take(@params.PageSize)
+                .ToListAsync();
             if (products.Count == 0)
             {
                 return NotFound("No results");

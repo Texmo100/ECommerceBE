@@ -27,9 +27,9 @@ namespace ECommerceBE.Controllers
 
         [HttpGet]
         [ProducesResponseType(200,Type = typeof(List<Supplier>))]
-        public IActionResult GetSuppliers()
+        public async Task<IActionResult> GetSuppliersAsync()
         {
-            return Ok(_repo.GetAllItems());
+            return Ok(await _repo.GetAllItemsAsync());
         }
 
         [HttpPost]
@@ -37,14 +37,14 @@ namespace ECommerceBE.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult PostSuppliers([FromBody] Supplier supplier)
+        public async Task<IActionResult> PostSupplierAsync([FromBody] Supplier supplier)
         {
             if (supplier == null)
             {
                 return BadRequest(ModelState);
             }
 
-            if (_repo.ItemExists(supplier.Name))
+            if (await _repo.ItemExistsAsync(supplier.Name))
             {
                 ModelState.AddModelError("", "This supplier already exists");
                 return StatusCode(404, ModelState);
@@ -52,7 +52,7 @@ namespace ECommerceBE.Controllers
 
             supplier.Password = UserUtilities.hashPassword(supplier.Password);
 
-            if (!_repo.CreateItem(supplier))
+            if (!await _repo.CreateItemAsync(supplier))
             {
                 ModelState.AddModelError("", "Something went wrong during the process");
                 return StatusCode(500, ModelState);
@@ -61,13 +61,13 @@ namespace ECommerceBE.Controllers
             return StatusCode(201, supplier);
         }
 
-        [HttpGet("{supplierId:int}", Name = "GetSupplier")]
+        [HttpGet("{supplierId:int}", Name = "GetSupplierAsync")]
         [ProducesResponseType(200, Type = typeof(Supplier))]
         [ProducesResponseType(404)]
         [ProducesDefaultResponseType]
-        public IActionResult GetSupplier(int supplierId)
+        public async Task<IActionResult> GetSupplierAsync(int supplierId)
         {
-            var supplier = _repo.GetItem(supplierId);
+            var supplier = await _repo.GetItemAsync(supplierId);
 
             if (supplier == null)
             {
@@ -88,43 +88,42 @@ namespace ECommerceBE.Controllers
             return suppliers;
         }
 
-        [HttpPut("{supplierId:int}", Name = "UpdateSupplier")]
+        [HttpPut("{supplierId:int}", Name = "UpdateSupplierAsync")]
         [ProducesResponseType(204)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateSupplier(int supplierId, [FromBody] Supplier supplier)
+        public async Task<IActionResult> UpdateSupplierAsync(int supplierId, [FromBody] Supplier supplier)
         {
             if (supplier == null || supplierId <= 0)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!_repo.ItemExists(supplierId))
+            if (!await _repo.ItemExistsAsync(supplierId))
             {
                 return NotFound();
             }
 
             supplier.Password = UserUtilities.hashPassword(supplier.Password);
-            _repo.UpdateItem(supplier);
+            await _repo.UpdateItemAsync(supplier);
 
             return NoContent();
         }
 
-        [HttpDelete("{supplierId:int}", Name = "DeleteSupplier")]
+        [HttpDelete("{supplierId:int}", Name = "DeleteSupplierAsync")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteSupplier(int supplierId)
+        public async Task<IActionResult> DeleteSupplierAsync(int supplierId)
         {
-            if (!_repo.ItemExists(supplierId))
+            if (!await _repo.ItemExistsAsync(supplierId))
             {
                 return NotFound();
             }
 
-            var supplier = _repo.GetItem(supplierId);
+            var supplier = await _repo.GetItemAsync(supplierId);
 
-            if (!_repo.DeleteItem(supplier))
+            if (!await _repo.DeleteItemAsync(supplier))
             {
                 ModelState.AddModelError("", $"Something went wrong during the process");
                 return StatusCode(500, ModelState);

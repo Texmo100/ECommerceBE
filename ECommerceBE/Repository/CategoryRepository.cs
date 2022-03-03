@@ -1,8 +1,10 @@
 ﻿using ECommerceBE.Data;
 using ECommerceBE.Models;
 using ECommerceBE.Repository.IRepository;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ECommerceBE.Repository
 {
@@ -15,49 +17,47 @@ namespace ECommerceBE.Repository
             _context = context;
         }
 
-        public bool CreateItem(Category item)
+        public async Task<bool> CreateItemAsync(Category item)
         {
             _context.Categories.Add(item);
-            return Save();
+            return await SaveAsync();
         }
 
-        public bool DeleteItem(Category item)
+        public async Task<bool> DeleteItemAsync(Category item)
         {
             _context.Categories.Remove(item);
-            return Save();
+            return await SaveAsync();
         }
 
-        public ICollection<Category> GetAllItems()
+        public async Task<ICollection<Category>> GetAllItemsAsync()
         {
-            return _context.Categories.OrderBy(a => a.Name).ToList();
+            return await _context.Categories.OrderBy(a => a.Name).ToListAsync();
         }
 
-        public Category GetItem(int id)
+        public async Task<Category> GetItemAsync(int id)
         {
-            return _context.Categories.FirstOrDefault(a => a.Id == id);
+            return await _context.Categories.FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public bool ItemExists(string name)
+        public async Task<bool> ItemExistsAsync(string name)
         {
-            var result = _context.Categories.Any(a => a.Name.ToLower().Trim() == name.ToLower().Trim());
-            return result;
+            return await _context.Categories.AnyAsync(a => a.Name.ToLower().Trim() == name.ToLower().Trim());
         }
 
-        public bool ItemExists(int id)
+        public async Task<bool> ItemExistsAsync(int id)
         {
-            var result = _context.Categories.Any(a => a.Id == id);
-            return result;
+            return await _context.Categories.AnyAsync(a => a.Id == id);
         }
 
-        public bool Save()
+        public async Task<bool> SaveAsync()
         {
-            return _context.SaveChanges() >= 0 ? true : false;
+            return await _context.SaveChangesAsync() >= 0 ? true : false;
         }
 
-        public bool UpdateItem(Category item)
+        public async Task<bool> UpdateItemAsync(Category item)
         {
             _context.Categories.Update(item);
-            return Save();
+            return await SaveAsync();
         }
     }
 }

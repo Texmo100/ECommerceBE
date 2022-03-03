@@ -1,23 +1,24 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ECommerceBE.Repository.IRepository
 {
     public interface IRepository<T> where T : class
     {
-        ICollection<T> GetAllItems();
+        Task<ICollection<T>> GetAllItemsAsync();
 
-        T GetItem(int id);
+        Task<T> GetItemAsync(int id);
 
-        bool ItemExists(string name);
+        Task<bool> ItemExistsAsync(string name);
 
-        bool ItemExists(int id);
+        Task<bool> ItemExistsAsync(int id);
 
-        bool CreateItem(T item);
+        Task<bool> CreateItemAsync(T item);
 
-        bool UpdateItem(T item);
+        Task<bool> UpdateItemAsync(T item);
 
-        bool DeleteItem(T item);
+        Task<bool> DeleteItemAsync(T item);
 
-        bool Save();
+        Task<bool> SaveAsync();
     }
 }

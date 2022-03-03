@@ -34,7 +34,7 @@ namespace ECommerceBE.Controllers
 
         [HttpPost]
         [ProducesResponseType(201, Type = typeof(Supplier))]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PostSupplierAsync([FromBody] Supplier supplier)
@@ -58,7 +58,7 @@ namespace ECommerceBE.Controllers
                 return StatusCode(500, ModelState);
             }
 
-            return StatusCode(201, supplier);
+            return Ok(supplier);
         }
 
         [HttpGet("{supplierId:int}", Name = "GetSupplierAsync")]

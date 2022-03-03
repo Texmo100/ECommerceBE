@@ -80,15 +80,26 @@ namespace ECommerceBE.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<List<Product>>> SearchByName(string name, [FromQuery] PaginationParams @params)
         {
-            var products = await _context.Products.Where(data => data.Name.Contains(name))
+            var productsPaginated = await _context
+                .Products
+                .Where(data => data.Name.Contains(name))
                 .Skip((@params.Page - 1) * @params.PageSize)
                 .Take(@params.PageSize)
                 .ToListAsync();
-            if (products.Count == 0)
+
+            var products = await _context
+                .Products
+                .Where(data => data.Name.Contains(name))
+                .ToListAsync();
+
+            int numberOfProducts = products.Count;
+
+            if (numberOfProducts == 0)
             {
                 return NotFound("No results");
             }
-            return products;
+
+            return Ok(new { numberOfProducts, productsPaginated, products });
         }
 
         [HttpPut("{productId:int}", Name = "UpdateProduct")]

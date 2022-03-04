@@ -36,7 +36,7 @@ namespace ECommerceBE.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PostCategorieAsync(Category category)
+        public async Task<IActionResult> PostCategoryAsync(Category category)
         {
             if (category == null)
             {

@@ -5,6 +5,8 @@ using ECommerceBE.Repository.IRepository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,12 +18,11 @@ namespace ECommerceBE.Controllers
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public class ProductController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ILogger<Product> _logger;
         private readonly IRepository<Product> _repo;
 
-        public ProductController(ApplicationDbContext context, IRepository<Product> repo)
+        public ProductController(IRepository<Product> repo)
         {
-            _context = context;
             _repo = repo;
         }
 
@@ -75,32 +76,41 @@ namespace ECommerceBE.Controllers
             return Ok(product);
         }
 
-        [HttpGet("{name}", Name = "SearchByName")]
+        [HttpGet("{name}", Name = "SearchProductsByName")]
         [ProducesResponseType(200, Type = typeof(Product))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<Product>>> SearchByName(string name, [FromQuery] PaginationParams @params)
+        public async Task<ActionResult> SearchProductsByName(string name, [FromQuery] PaginationParams @params)
         {
-            var productsPaginated = await _context
-                .Products
-                .Where(data => data.Name.Contains(name))
-                .Skip((@params.Page - 1) * @params.PageSize)
-                .Take(@params.PageSize)
-                .ToListAsync();
+            var matchedProducts = await _repo.SearchItemsAsync(name);
 
-            var products = await _context
-                .Products
-                .Where(data => data.Name.Contains(name))
-                .ToListAsync();
-
-            int numberOfProducts = products.Count;
-
-            if (numberOfProducts == 0)
+            if (matchedProducts.Count == 0)
             {
                 return NotFound("No results");
             }
 
-            return Ok(new { numberOfProducts, productsPaginated, products });
+            int quotient = Math.DivRem(matchedProducts.Count, @params.PageSize, out int remainder);
+            int numberOfPages = remainder == 0 ? quotient : quotient + 1;
+
+            if (numberOfPages < @params.Page)
+            {
+                return BadRequest("This page does not have items");
+            }
+
+            var productsPaginated = matchedProducts
+                .Skip((@params.Page - 1) * @params.PageSize)
+                .Take(@params.PageSize);
+
+
+
+            return Ok(new
+            {
+                matchedProducts = matchedProducts,
+                countMatchedProducts = matchedProducts.Count,
+                productsPaginated = productsPaginated,
+                numberOfPages = numberOfPages
+            });
         }
+
 
         [HttpPut("{productId:int}", Name = "UpdateProductAsync")]
         [ProducesResponseType(204)]

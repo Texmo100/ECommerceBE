@@ -7,6 +7,8 @@ namespace ECommerceBE.Repository.IRepository
     {
         Task<ICollection<T>> GetAllItemsAsync();
 
+        Task<ICollection<T>> SearchItemsAsync(string name);
+
         Task<T> GetItemAsync(int id);
 
         Task<bool> ItemExistsAsync(string name);

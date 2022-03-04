@@ -34,6 +34,12 @@ namespace ECommerceBE.Repository
             return await _context.Categories.OrderBy(a => a.Name).ToListAsync();
         }
 
+        public async Task<ICollection<Category>> SearchItemsAsync(string name)
+        {
+            List<Category> categories = new List<Category>();
+            return categories;
+        }
+
         public async Task<Category> GetItemAsync(int id)
         {
             return await _context.Categories.FirstOrDefaultAsync(a => a.Id == id);

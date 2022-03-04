@@ -34,6 +34,14 @@ namespace ECommerceBE.Repository
             return await _context.Products.Include(c => c.Supplier).OrderBy(a => a.Name).ToListAsync();
         }
 
+        public async Task<ICollection<Product>> SearchItemsAsync(string name)
+        {
+            return await _context
+                .Products
+                .Where(data => data.Name.Contains(name))
+                .ToListAsync();
+        }
+
         public async Task<Product> GetItemAsync(int id)
         {
             return await _context.Products.Include(c => c.Supplier).FirstOrDefaultAsync(a => a.Id == id);

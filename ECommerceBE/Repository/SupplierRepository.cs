@@ -34,6 +34,12 @@ namespace ECommerceBE.Repository
             return await _context.Suppliers.OrderBy(a => a.Name).ToListAsync();
         }
 
+        public async Task<ICollection<Supplier>> SearchItemsAsync(string name)
+        {
+            List<Supplier> suppliers = new List<Supplier>();
+            return suppliers;
+        }
+
         public async Task<Supplier> GetItemAsync(int id)
         {
             return await _context.Suppliers.FirstOrDefaultAsync(a => a.Id == id);
